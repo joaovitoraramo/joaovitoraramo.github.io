@@ -104,3 +104,25 @@
 a.chip:hover { color: var(--fg); border-color: var(--c); transform: translateY(-1px); }
 @media (max-width: 520px) { .video { grid-template-columns: 40px minmax(0, 1fr); padding: 14px; } .video .pos { width: 40px; height: 40px; font-size: 17px; border-radius: 12px; } .video .soma { grid-column: 1 / -1; text-align: left; font-size: 22px; } .video .soma small { display: inline; margin-left: 8px; } }
 .vazio { padding: 34px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line-2); border-radius: 18px; }
+
+/* tela de senha: os dados chegam cifrados e só abrem com a senha digitada aqui */
+.tranca { display: grid; place-items: center; min-height: min(70vh, 640px); padding-block: 20px; }
+.cofre { width: min(100%, 460px); padding: clamp(26px, 5vw, 40px); display: grid; gap: 12px; text-align: center; animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
+.cofre .cadeado { width: 72px; height: 72px; margin: 0 auto 6px; filter: drop-shadow(0 16px 30px var(--glow-a)); }
+.cofre .arco { transform-origin: 32px 28px; animation: balanca 3.4s ease-in-out infinite; }
+@keyframes balanca { 0%, 86%, 100% { transform: rotate(0); } 90% { transform: rotate(-7deg); } 95% { transform: rotate(6deg); } }
+.cofre h1 { font-size: 30px; }
+.cofre p { margin: 0 0 10px; color: var(--muted); }
+.cofre .rotulo { text-align: left; }
+.campo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.campo input { min-width: 0; font: 500 17px var(--body); color: var(--fg); padding: 13px 16px; border-radius: 14px; background: color-mix(in srgb, var(--bg) 55%, transparent);
+  border: 1px solid var(--line-2); outline: none; transition: border-color .2s, box-shadow .2s; }
+.campo input:focus { border-color: var(--brand-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-2) 22%, transparent); }
+.lembrar { display: inline-flex; align-items: center; gap: 9px; justify-self: start; font-size: 14.5px; color: var(--muted); cursor: pointer; }
+.lembrar input { width: 17px; height: 17px; accent-color: var(--brand); }
+.trancaErro { color: var(--fg) !important; margin: 4px 0 0 !important; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--youtube) 18%, transparent); border: 1px solid color-mix(in srgb, var(--youtube) 50%, transparent); }
+.cofre.treme { animation: treme .42s cubic-bezier(.36,.07,.19,.97); }
+@keyframes treme { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
+.cofre .botao[disabled] { opacity: .6; cursor: progress; }
+.sair { font: inherit; color: var(--muted); background: none; border: 0; padding: 0; cursor: pointer; }
+.sair:hover { color: var(--fg); }

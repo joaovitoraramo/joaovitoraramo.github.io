@@ -1,7 +1,7 @@
 /* Painel Réplica do Tempo. Os dados chegam como script publicado pelo Mac a cada coleta (sem servidor e sem tokens aqui). */
 (() => {
   "use strict";
-  const DADOS = "https://pub-e8b3e055aa0b46f1bf64b419e1a5e11f.r2.dev/painel/replicadotempo.js";
+  const DADOS = window.PAINEL_DADOS || "https://pub-e8b3e055aa0b46f1bf64b419e1a5e11f.r2.dev/painel/replicadotempo.js";
   const REDES = [["youtube", "YouTube"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["facebook", "Facebook"], ["kwai", "Kwai"]];
   const NOME = Object.fromEntries(REDES);
   const calmo = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -239,7 +239,47 @@
   }
   let larg = innerWidth, espera;
   addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => { if (atual && Math.abs(innerWidth - larg) > 40) { larg = innerWidth; grafico(atual); } }, 180); });
-  window.__painel = render;
+  // ---------- dados cifrados: a senha vira chave no navegador e nunca sai dele ----------
+  const b64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+  const guarda = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }, del: k => { try { localStorage.removeItem(k); } catch {} } };
+  let chave = null, chaveSal = null, pendente = null;
+  async function deriva(senha, env) {
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt: b64(env.sal), iterations: env.iter }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  }
+  async function abre(env, k) {
+    const claro = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(env.iv) }, k, b64(env.dados));
+    return JSON.parse(new TextDecoder().decode(claro));
+  }
+  function tranca(mostra) { $("tranca").hidden = !mostra; $("conteudo").hidden = mostra; $("sair").hidden = mostra || !chave; if (mostra) setTimeout(() => $("senha").focus(), 50); }
+  async function recebe(d) {
+    if (!d || !d.cifrado) { tranca(false); render(d); return; }
+    pendente = d;
+    try {
+      if (!chave || chaveSal !== d.sal) {
+        const salva = guarda.get("painel-senha");
+        if (!salva) { tranca(true); return; }
+        chave = await deriva(salva, d); chaveSal = d.sal;
+      }
+      const dados = await abre(d, chave);
+      tranca(false); render(dados);
+    } catch { chave = null; guarda.del("painel-senha"); tranca(true); }
+  }
+  $("cofre").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    if (!pendente) return;
+    const senha = $("senha").value, bt = $("abrir"); bt.disabled = true; $("trancaErro").hidden = true;
+    try {
+      const k = await deriva(senha, pendente), dados = await abre(pendente, k);
+      chave = k; chaveSal = pendente.sal;
+      if ($("lembrar").checked) guarda.set("painel-senha", senha);
+      $("senha").value = ""; tranca(false); render(dados);
+    } catch {
+      $("trancaErro").hidden = false; const c = $("cofre"); c.classList.remove("treme"); void c.offsetWidth; c.classList.add("treme"); $("senha").select();
+    } finally { bt.disabled = false; }
+  });
+  $("sair").addEventListener("click", () => { chave = null; atual = null; anterior = {}; guarda.del("painel-senha"); tranca(true); });
+  window.__painel = recebe;
   busca(); setInterval(busca, 60_000); setInterval(estado, 20_000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) busca(); });
 })();

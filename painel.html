@@ -30,6 +30,20 @@
     </header>
 
     <main>
+      <section class="tranca" id="tranca" hidden aria-labelledby="trancaTit">
+        <form class="vidro cofre" id="cofre" autocomplete="off">
+          <svg class="cadeado" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#46D9FF"/><stop offset="1" stop-color="#8E7BFF"/></linearGradient></defs>
+            <path class="arco" d="M20 28v-8a12 12 0 0 1 24 0v8" fill="none" stroke="url(#cg)" stroke-width="5" stroke-linecap="round"/>
+            <rect x="12" y="28" width="40" height="28" rx="9" fill="url(#cg)"/><circle cx="32" cy="40" r="4" fill="#0B0B1E"/><path d="M32 43v6" stroke="#0B0B1E" stroke-width="3.5" stroke-linecap="round"/></svg>
+          <h1 id="trancaTit">Painel protegido</h1>
+          <p>Os números do canal ficam cifrados. Digite a senha para abrir neste aparelho.</p>
+          <label class="rotulo" for="senha">Senha do painel</label>
+          <div class="campo"><input id="senha" type="password" inputmode="text" autocomplete="current-password" required placeholder="Digite a senha"><button class="botao" type="submit" id="abrir">Abrir</button></div>
+          <label class="lembrar"><input type="checkbox" id="lembrar" checked> Lembrar neste aparelho</label>
+          <p class="trancaErro" id="trancaErro" role="alert" hidden>Senha incorreta. Tente de novo.</p>
+        </form>
+      </section>
+      <div id="conteudo">
       <div class="sobe" style="--i:0; margin-bottom: 14px"><span class="estado" id="estado"><span class="pulso"></span><span id="estadoTxt">Buscando a última coleta</span></span></div>
 
       <section class="heroi">
@@ -58,11 +72,12 @@
         <div class="cab"><div><h2>Os vídeos, do mais visto ao menos visto</h2><p>A barra mostra de onde vieram as views de cada um. Toque numa rede para abrir o vídeo lá.</p></div></div>
         <div class="videos" id="videos"><div class="vazio">Os vídeos aparecem aqui depois da primeira coleta.</div></div>
       </section>
+      </div>
     </main>
 
     <footer class="rodape">
       <span id="rodape">Dados coletados a cada 30 minutos direto das plataformas.</span>
-      <nav aria-label="Rodapé"><a href="./">Início</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a></nav>
+      <nav aria-label="Rodapé"><a href="./">Início</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a><button type="button" class="sair" id="sair" hidden>Bloquear painel</button></nav>
     </footer>
   </div>
   <script src="assets/painel.js"></script>
