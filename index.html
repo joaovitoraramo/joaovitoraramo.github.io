@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Réplica do Tempo · dark-yt</title>
+  <meta name="description" content="dark-yt é a ferramenta pessoal que produz e publica os vídeos do canal Réplica do Tempo nas contas do próprio dono.">
+  <meta name="theme-color" content="#0A0B1A">
+  <link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <style>
+    .capa { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(20px, 5vw, 60px); align-items: center; padding-block: clamp(24px, 6vw, 70px) 30px; }
+    @media (max-width: 820px) { .capa { grid-template-columns: 1fr; } .relogio { order: -1; max-width: 300px; margin-inline: auto; } }
+    .capa h1 { font-size: clamp(38px, 6.2vw, 70px); line-height: 1; font-weight: 800; margin: 14px 0 18px; }
+    .capa p { color: var(--muted); font-size: clamp(16px, 2vw, 19px); max-width: 54ch; margin: 0 0 26px; }
+    .acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+    .relogio { position: relative; aspect-ratio: 1; width: 100%; max-width: 440px; justify-self: end; }
+    .relogio svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 30px 60px rgba(0,0,0,.5)); }
+    .relogio .aro { transform-origin: 200px 200px; animation: gira 60s linear infinite; }
+    .relogio .aro2 { transform-origin: 200px 200px; animation: gira 36s linear infinite reverse; }
+    .relogio .hora { transform-origin: 200px 200px; animation: gira 40s linear infinite; }
+    .relogio .min { transform-origin: 200px 200px; animation: gira 8s linear infinite; }
+    .relogio .astro { transform-origin: 200px 200px; animation: gira 18s linear infinite; }
+    .tres { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+    .cartao { padding: 24px; transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .35s; }
+    .cartao:hover { transform: translateY(-6px); border-color: var(--line-2); }
+    .cartao .ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 16px; background: linear-gradient(140deg, color-mix(in srgb, var(--k) 34%, transparent), transparent); border: 1px solid color-mix(in srgb, var(--k) 45%, transparent); box-shadow: 0 12px 26px -14px var(--k); }
+    .cartao .ic svg { width: 22px; height: 22px; stroke: var(--k); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .cartao h2 { font-size: 20px; margin-bottom: 6px; }
+    .cartao p { margin: 0; color: var(--muted); font-size: 15px; }
+    .faixa { margin-top: 26px; padding: 18px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+    .faixa span.rotulo { margin-right: 4px; }
+    .faixa b { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+    .faixa b i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 14px var(--c); }
+  </style>
+</head>
+<body>
+  <div class="ceu" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="wrap">
+    <header class="topo">
+      <a class="marca" href="./" aria-current="page">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#46D9FF"/><stop offset="1" stop-color="#8E7BFF"/></linearGradient></defs>
+          <circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2" opacity=".35"/>
+          <g class="orbita"><circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2.4" stroke-dasharray="26 81" stroke-linecap="round"/></g>
+          <g class="ponteiro"><path d="M20 20V9" stroke="url(#mg)" stroke-width="2.6" stroke-linecap="round"/></g>
+          <path d="M20 20l7 4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="20" r="2.6" fill="currentColor"/></svg>
+        Réplica do Tempo
+      </a>
+      <nav class="nav" aria-label="Seções do site"><a href="painel.html">Painel</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a></nav>
+    </header>
+
+    <main>
+      <section class="capa">
+        <div>
+          <span class="rotulo sobe" style="--i:0">dark-yt · ferramenta pessoal</span>
+          <h1 class="sobe" style="--i:1">Histórias do passado, <span class="gradiente">publicadas todo dia.</span></h1>
+          <p class="sobe" style="--i:2">O dark-yt é a ferramenta que roteiriza, narra, monta e publica os vídeos do canal Réplica do Tempo. Ela trabalha só nas contas do próprio dono e não guarda dados de mais ninguém.</p>
+          <div class="acoes sobe" style="--i:3">
+            <a class="botao" href="painel.html">Abrir o painel <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a class="botao fantasma" href="privacy.html">Como os dados são tratados</a>
+          </div>
+        </div>
+        <div class="relogio sobe" style="--i:2" aria-hidden="true">
+          <svg viewBox="0 0 400 400">
+            <defs>
+              <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#46D9FF"/><stop offset=".55" stop-color="#8E7BFF"/><stop offset="1" stop-color="#F062B4"/></linearGradient>
+              <radialGradient id="rc"><stop offset="0" stop-color="#8E7BFF" stop-opacity=".34"/><stop offset="1" stop-color="#8E7BFF" stop-opacity="0"/></radialGradient>
+            </defs>
+            <circle cx="200" cy="200" r="190" fill="url(#rc)"/>
+            <g class="aro"><circle cx="200" cy="200" r="172" fill="none" stroke="url(#rg)" stroke-width="1.5" stroke-dasharray="2 13.01" opacity=".9"/></g>
+            <g class="aro2"><circle cx="200" cy="200" r="146" fill="none" stroke="url(#rg)" stroke-width="10" stroke-dasharray="150 767" stroke-linecap="round" opacity=".85"/><circle cx="200" cy="200" r="146" fill="none" stroke="currentColor" stroke-width="1" opacity=".16"/></g>
+            <g class="astro"><circle cx="200" cy="80" r="7" fill="#FFB86B"/><circle cx="200" cy="80" r="15" fill="#FFB86B" opacity=".2"/></g>
+            <circle cx="200" cy="200" r="104" fill="none" stroke="currentColor" stroke-width="1" opacity=".22"/>
+            <g class="hora"><path d="M200 200V134" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></g>
+            <g class="min"><path d="M200 200V106" stroke="url(#rg)" stroke-width="4.5" stroke-linecap="round"/></g>
+            <circle cx="200" cy="200" r="9" fill="currentColor"/>
+          </svg>
+        </div>
+      </section>
+
+      <section class="tres" aria-label="O que a ferramenta faz">
+        <article class="vidro cartao sobe" style="--i:4; --k: var(--brand-2)">
+          <div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4"/><path d="M10 8.5l4 2-4 2z"/></svg></div>
+          <h2>Produz os vídeos</h2><p>Pesquisa fatos com fonte, escreve o roteiro, narra e monta um vídeo longo e alguns curtos por dia.</p>
+        </article>
+        <article class="vidro cartao sobe" style="--i:5; --k: var(--brand)">
+          <div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/><path d="M5 21h14"/></svg></div>
+          <h2>Publica nas contas do dono</h2><p>Envia cada vídeo para as contas do canal, com autorização dada pelo dono em cada plataforma.</p>
+        </article>
+        <article class="vidro cartao sobe" style="--i:6; --k: var(--instagram)">
+          <div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.500-7-4.500-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h2>Não coleta dados de terceiros</h2><p>Não há cadastro, login de visitantes nem rastreamento. As chaves de acesso ficam só no computador do dono.</p>
+        </article>
+      </section>
+
+      <section class="vidro faixa sobe" style="--i:7" aria-label="Plataformas">
+        <span class="rotulo">Onde o canal publica</span>
+        <b style="--c: var(--youtube)"><i></i>YouTube</b><b style="--c: var(--tiktok)"><i></i>TikTok</b><b style="--c: var(--instagram)"><i></i>Instagram</b><b style="--c: var(--facebook)"><i></i>Facebook</b><b style="--c: var(--kwai)"><i></i>Kwai</b>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      <span>dark-yt · uso pessoal do dono das contas</span>
+      <nav aria-label="Rodapé"><a href="painel.html">Painel</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a><a href="https://github.com/joaovitoraramo">Contato no GitHub</a></nav>
+    </footer>
+  </div>
+</body>
+</html>

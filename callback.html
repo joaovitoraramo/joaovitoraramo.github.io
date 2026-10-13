@@ -2,24 +2,82 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>dark-yt callback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Autorização · dark-yt</title>
+  <meta name="description" content="Página de retorno da autorização do dark-yt.">
+  <meta name="theme-color" content="#0A0B1A">
+  <link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <meta name="robots" content="noindex">
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 48px auto; padding: 0 16px; }
-    pre { background: #f2f2f2; padding: 12px; border-radius: 6px; word-break: break-all; white-space: pre-wrap; }
+    .codigo { display: grid; gap: 14px; margin: 8px 0 4px; }
+    .codigo pre, .cmd { margin: 0; padding: 16px 18px; border-radius: 16px; font: 500 14px/1.6 var(--mono); color: var(--fg); white-space: pre-wrap; word-break: break-all;
+      background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px solid var(--line-2); box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset, 0 18px 40px -26px var(--brand); }
+    .codigo pre { font-size: 15px; background: linear-gradient(120deg, color-mix(in srgb, var(--brand) 16%, transparent), color-mix(in srgb, var(--brand-2) 10%, transparent)); }
+    .codigo .botao { justify-self: start; }
+    .cmd { color: var(--muted); }
+    code { font-family: var(--mono); font-size: .92em; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--fg); }
+    .erro { padding: 14px 16px; border-radius: 14px; color: var(--fg) !important; background: color-mix(in srgb, var(--youtube) 16%, transparent); border: 1px solid color-mix(in srgb, var(--youtube) 50%, transparent); }
   </style>
 </head>
 <body>
-  <h1>Autorização recebida</h1>
-  <p>Copie o código abaixo e cole no terminal onde o comando <code>pipeline auth-tiktok</code> está esperando:</p>
-  <pre id="c"></pre>
-  <p id="e" style="color:#b00"></p>
+  <div class="ceu" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="wrap">
+    <header class="topo">
+      <a class="marca" href="./">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#46D9FF"/><stop offset="1" stop-color="#8E7BFF"/></linearGradient></defs>
+          <circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2" opacity=".35"/>
+          <g class="orbita"><circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2.4" stroke-dasharray="26 81" stroke-linecap="round"/></g>
+          <g class="ponteiro"><path d="M20 20V9" stroke="url(#mg)" stroke-width="2.6" stroke-linecap="round"/></g>
+          <path d="M20 20l7 4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="20" r="2.6" fill="currentColor"/></svg>
+        Réplica do Tempo
+      </a>
+      <nav class="nav" aria-label="Seções do site"><a href="painel.html">Painel</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a></nav>
+    </header>
+    <main>
+      <article class="vidro folha sobe">
+        <span class="rotulo" id="rot">dark-yt · retorno da autorização</span>
+        <h1 id="tit">Autorização <span class="gradiente">recebida</span></h1>
+        <p class="sub" id="sub">Copie o código abaixo e cole no terminal, no lugar de <code>CODIGO</code>.</p>
+        <div class="codigo" id="caixa">
+          <pre id="c" tabindex="0" aria-label="Código de autorização"></pre>
+          <button class="botao" id="copiar" type="button"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 11V4a2 2 0 0 1 2-2h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span id="copiarTxt">Copiar código</span></button>
+        </div>
+        <p class="erro" id="e" hidden></p>
+        <h2>Próximo passo</h2>
+        <p>No terminal do projeto, rode o comando de autorização com o código copiado:</p>
+        <pre class="cmd">uv run pipeline auth-tiktok --canal replicadotempo --code 'CODIGO'</pre>
+        <p>O código vale por poucos minutos e só pode ser usado uma vez.</p>
+      </article>
+    </main>
+    <footer class="rodape">
+      <span>dark-yt · uso pessoal do dono das contas</span>
+      <nav aria-label="Rodapé"><a href="./">Início</a><a href="painel.html">Painel</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a><a href="https://github.com/joaovitoraramo">Contato no GitHub</a></nav>
+    </footer>
+  </div>
   <script>
-    var q = new URLSearchParams(location.search);
-    document.getElementById('c').textContent = q.get('code') || '(sem código na URL)';
-    if (q.get('error')) {
-      document.getElementById('e').textContent = 'Erro: ' + q.get('error') + ' - ' + (q.get('error_description') || '');
-    }
+    (function () {
+      var q = new URLSearchParams(location.search), code = q.get("code"), erro = q.get("error");
+      var c = document.getElementById("c"), e = document.getElementById("e");
+      if (erro) {
+        document.getElementById("tit").innerHTML = 'Autorização <span class="gradiente">não concluída</span>';
+        document.getElementById("sub").textContent = "A plataforma devolveu um erro. Volte ao terminal e gere um novo link de autorização.";
+        e.hidden = false; e.textContent = "Erro: " + erro + (q.get("error_description") ? " - " + q.get("error_description") : "");
+        document.getElementById("caixa").hidden = true;
+        return;
+      }
+      c.textContent = code || "(sem código na URL)";
+      if (!code) { document.getElementById("copiar").hidden = true; document.getElementById("sub").textContent = "Esta página mostra o código quando a plataforma redireciona para cá depois da autorização."; return; }
+      document.getElementById("copiar").addEventListener("click", function () {
+        var t = document.getElementById("copiarTxt");
+        var ok = function () { t.textContent = "Copiado"; setTimeout(function () { t.textContent = "Copiar código"; }, 1800); };
+        var manual = function () { var r = document.createRange(); r.selectNodeContents(c); var s = getSelection(); s.removeAllRanges(); s.addRange(r); t.textContent = "Selecionado: copie com Ctrl+C"; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, manual); else manual();
+      });
+    })();
   </script>
 </body>
 </html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Painel · Réplica do Tempo</title>
+  <meta name="description" content="Views, seguidores e desempenho de cada vídeo do canal Réplica do Tempo em YouTube, TikTok, Instagram, Facebook e Kwai.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0A0B1A">
+  <link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/painel.css">
+</head>
+<body>
+  <div class="ceu" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="wrap">
+    <header class="topo">
+      <a class="marca" href="./">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#46D9FF"/><stop offset="1" stop-color="#8E7BFF"/></linearGradient></defs>
+          <circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2" opacity=".35"/>
+          <g class="orbita"><circle cx="20" cy="20" r="17" fill="none" stroke="url(#mg)" stroke-width="2.4" stroke-dasharray="26 81" stroke-linecap="round"/></g>
+          <g class="ponteiro"><path d="M20 20V9" stroke="url(#mg)" stroke-width="2.6" stroke-linecap="round"/></g>
+          <path d="M20 20l7 4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="20" r="2.6" fill="currentColor"/></svg>
+        Réplica do Tempo
+      </a>
+      <nav class="nav" aria-label="Seções do site"><a href="painel.html" aria-current="page">Painel</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a></nav>
+    </header>
+
+    <main>
+      <div class="sobe" style="--i:0; margin-bottom: 14px"><span class="estado" id="estado"><span class="pulso"></span><span id="estadoTxt">Buscando a última coleta</span></span></div>
+
+      <section class="heroi">
+        <div class="vidro total sobe" style="--i:1">
+          <span class="brilho" aria-hidden="true"></span>
+          <div><span class="rotulo">Views somadas em todas as redes</span><h1 class="gradiente num" id="total">0</h1></div>
+          <div class="linha" id="selos"></div>
+        </div>
+        <div class="vidro anel sobe" style="--i:2">
+          <div class="centro"><svg viewBox="0 0 120 120" id="anel" role="img" aria-label="Participação de cada rede nas views"><circle class="trilho" cx="60" cy="60" r="50"/></svg><div><b class="num" id="lider">–</b><span id="liderNome">sem dados</span></div></div>
+          <div class="legenda" id="legenda"></div>
+        </div>
+      </section>
+
+      <section class="redes" id="redes" aria-label="Uma ficha por rede"></section>
+
+      <section class="vidro bloco sobe" style="--i:5">
+        <div class="cab">
+          <div><h2>O ritmo de cada rede</h2><p id="curvaNota">Total de views a cada coleta. Passe o dedo ou o mouse pela curva para ver o momento exato.</p></div>
+          <div class="fichas" id="fichas"></div>
+        </div>
+        <div class="grafico" id="grafico"><div class="dica" id="dica"></div></div>
+      </section>
+
+      <section class="vidro bloco sobe" style="--i:6">
+        <div class="cab"><div><h2>Os vídeos, do mais visto ao menos visto</h2><p>A barra mostra de onde vieram as views de cada um. Toque numa rede para abrir o vídeo lá.</p></div></div>
+        <div class="videos" id="videos"><div class="vazio">Os vídeos aparecem aqui depois da primeira coleta.</div></div>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      <span id="rodape">Dados coletados a cada 30 minutos direto das plataformas.</span>
+      <nav aria-label="Rodapé"><a href="./">Início</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a></nav>
+    </footer>
+  </div>
+  <script src="assets/painel.js"></script>
+</body>
+</html>
