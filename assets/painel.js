@@ -75,7 +75,8 @@
     if (g && g.n > 0) { const s = el("span", "selo sobe-cor"); s.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 10l4-4 3 3 3-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; s.append(`+${nf.format(g.n)} ${g.rotulo}`); selos.append(s); }
     const seg = Object.values(d.seguidores || {}).reduce((a, b) => a + b, 0);
     selos.append(el("span", "selo", `${nf.format(seg)} ${seg === 1 ? "seguidor" : "seguidores"} somados`));
-    selos.append(el("span", "selo", `${(d.videos || []).length} vídeos no ar`));
+    const vids = d.videos || [], posts = vids.reduce((n, v) => n + Object.keys(v.plataformas || {}).length, 0);
+    selos.append(el("span", "selo", `${vids.length} ${vids.length === 1 ? "vídeo" : "vídeos"} em ${posts} ${posts === 1 ? "publicação" : "publicações"}`));
 
     // anel de participação
     const anel = $("anel"), C = 2 * Math.PI * 50, ativos = REDES.filter(([id]) => totais[id] > 0);
