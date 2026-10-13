@@ -46,6 +46,20 @@
       <div id="conteudo">
       <div class="sobe" style="--i:0; margin-bottom: 14px"><span class="estado" id="estado"><span class="pulso"></span><span id="estadoTxt">Buscando a última coleta</span></span></div>
 
+      <section class="vidro bloco run sobe" id="run" hidden style="--i:1" aria-labelledby="runTit">
+        <div class="cab">
+          <div><span class="rotulo" id="runRot">Produção</span><h2 id="runTit">Run de hoje</h2><p id="runMeta"></p></div>
+          <span class="pilula" id="runPilula"><i></i><span id="runStatus">Aguardando</span></span>
+        </div>
+        <div class="agora" id="runAgora" hidden><span class="giro" aria-hidden="true"></span><div><b id="runEtapa"></b><span id="runEvento"></span></div><em id="runEta"></em></div>
+        <div class="trilho" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="runBarra"><i id="runBarraI"></i></div>
+        <details class="mais" id="runMais">
+          <summary><span>Etapas e detalhes do run</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+          <div class="fases" id="runFases"></div>
+          <div class="detalhes" id="runDetalhes"></div>
+        </details>
+      </section>
+
       <section class="heroi">
         <div class="vidro total sobe" style="--i:1">
           <span class="brilho" aria-hidden="true"></span>

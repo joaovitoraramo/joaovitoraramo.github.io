@@ -2,6 +2,7 @@
 (() => {
   "use strict";
   const DADOS = window.PAINEL_DADOS || "https://pub-e8b3e055aa0b46f1bf64b419e1a5e11f.r2.dev/painel/replicadotempo.js";
+  const RUN = window.PAINEL_RUN || DADOS.replace(/\.js$/, "-run.js");
   const REDES = [["youtube", "YouTube"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["facebook", "Facebook"], ["kwai", "Kwai"]];
   const NOME = Object.fromEntries(REDES);
   const calmo = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -221,6 +222,102 @@
     });
   }
 
+  // ---------- andamento do run ----------
+  let run = null, pendenteRun = null;
+  const mmss = s => { s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min` : m ? `${m} min ${String(s % 60).padStart(2, "0")} s` : `${s} s`; };
+  const CHECK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.5l2.5 2.5 4.5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const XIS = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const ROTULO = { running: ["rodando", "Em andamento"], done: ["feito", "Concluído"], failed: ["falhou", "Falhou"], paused: ["pausado", "Pausado"] };
+
+  function relogioRun() {
+    if (!run) return;
+    const desde = (Date.now() - new Date(run.atualizado_em).getTime()) / 1000, ativo = run.status === "running";
+    const ini = new Date(run.inicio), hoje = new Date().toDateString() === ini.toDateString();
+    const quando = hoje ? `hoje às ${hm(ini)}` : `${dia(ini)} às ${hm(ini)}`;
+    const fimT = run.etapas.map(e => e.fim).filter(Boolean).sort().at(-1);
+    const corrido = ((ativo ? Date.now() : new Date(fimT || run.atualizado_em).getTime()) - ini.getTime()) / 1000;
+    const tempoUtil = run.etapas.reduce((a, e) => a + (e.dur_s || 0), 0);
+    $("runMeta").textContent = ativo ? `Começou ${quando} · ${mmss(corrido)} de trabalho até agora` : `Começou ${quando} · ${mmss(tempoUtil)} de processamento`;
+    if (ativo) $("runEta").textContent = `faltam cerca de ${mmss(Math.max(30, run.eta_s - desde))}`;
+  }
+
+  function renderRun(r) {
+    run = r; const sec = $("run"); sec.hidden = false;
+    const ativo = r.status === "running", [cls, txt] = ROTULO[r.status] || ["", r.status];
+    sec.classList.toggle("ativo", ativo);
+    const hoje = new Date().toDateString() === new Date(r.inicio).toDateString();
+    $("runTit").textContent = ativo ? "Run em andamento" : hoje ? "Run de hoje" : "Último run";
+    $("runPilula").className = "pilula " + cls; $("runStatus").textContent = txt;
+    const at = r.etapas.find(e => e.id === r.etapa_atual), falha = r.etapas.find(e => e.status === "failed");
+    $("runAgora").hidden = !(ativo && at) && !falha;
+    if (ativo && at) { $("runEtapa").textContent = at.titulo; $("runEvento").textContent = r.evento || `Etapa ${r.etapas.indexOf(at) + 1} de ${r.etapas.length} · ${at.fase}`; }
+    else if (falha) { $("runEtapa").textContent = `Parou em: ${falha.titulo}`; $("runEvento").textContent = falha.erro || ""; $("runEta").textContent = "veja o aviso no Telegram"; }
+    const pct = Math.round(100 * (r.status === "done" ? 1 : r.progresso));
+    $("runBarra").setAttribute("aria-valuenow", pct); setTimeout(() => { $("runBarraI").style.width = pct + "%"; }, 60);
+    if (ativo && !$("runMais").dataset.mexeu) $("runMais").open = true;
+
+    // etapas agrupadas em fases
+    const fases = $("runFases"); fases.replaceChildren();
+    const grupos = []; r.etapas.forEach(e => { let g = grupos.find(x => x.nome === e.fase); if (!g) grupos.push(g = { nome: e.fase, itens: [] }); g.itens.push(e); });
+    grupos.forEach((g, gi) => {
+      const feitas = g.itens.filter(e => e.status === "done").length, c = el("div", "fase" + (g.itens.some(e => e.status === "running") ? " atual" : ""));
+      const h = el("h3", null, `${gi + 1}. ${g.nome}`); h.append(el("small", null, `${feitas}/${g.itens.length}`)); c.append(h);
+      const ol = el("ol");
+      for (const e of g.itens) {
+        const li = el("li", e.status), m = el("span", "marca-e"); if (e.status === "done") m.innerHTML = CHECK; if (e.status === "failed") m.innerHTML = XIS;
+        const t = el("span", null, e.titulo);
+        const extra = e.status === "done" && e.dur_s != null ? mmss(e.dur_s) + (e.tentativas > 1 ? ` · ${e.tentativas} tentativas` : "")
+          : e.status === "running" ? `em andamento · costuma levar ${mmss(e.estimativa_s)}` : e.status === "failed" ? "falhou" : `cerca de ${mmss(e.estimativa_s)}`;
+        t.append(el("small", null, extra)); li.append(m, t); ol.append(li);
+      }
+      c.append(ol); fases.append(c);
+    });
+
+    // o que já foi decidido
+    const det = $("runDetalhes"); det.replaceChildren();
+    const cartao = (titulo, largo) => { const c = el("div", "det" + (largo ? " largo" : "")); c.append(el("h3", null, titulo)); det.append(c); return c; };
+    if (r.tema) {
+      const c = cartao("Tema escolhido"); c.append(el("span", "etq", r.tema.serie), el("p", "forte", r.tema.tema));
+      if (r.tema.angulo) c.append(el("p", null, r.tema.angulo));
+      if (r.tema.reservas.length) { const d = el("details"); d.append(el("summary", null, "Temas de reserva")); r.tema.reservas.forEach(t => d.append(el("p", null, t))); c.append(d); }
+    }
+    if (r.roteiro) {
+      const c = cartao("Roteiro"); c.append(el("p", "forte", r.roteiro.titulo), el("p", null, `${nf.format(r.roteiro.palavras)} palavras · ${r.roteiro.blocos.length} blocos`));
+      const add = (t, txt) => { if (!txt) return; const d = el("details"); d.append(el("summary", null, t), el("p", null, txt)); c.append(d); };
+      add("Abertura", r.roteiro.gancho); r.roteiro.blocos.forEach((b, i) => add(`${i + 1}. ${b.titulo}`, b.texto)); add("Fechamento", r.roteiro.fechamento);
+    }
+    if (r.shorts.length) {
+      const c = cartao("Shorts do dia"), ul = el("ul");
+      r.shorts.forEach((s, i) => { const li = el("li"); li.append(el("p", null, `${i + 1}. ${s.titulo}`)); li.firstChild.append(el("small", null, `  ${s.tipo === "autonomo" ? "tema próprio" : "corte do vídeo longo"}${s.duracao_s ? " · " + Math.round(s.duracao_s) + " s" : ""}`)); ul.append(li); });
+      c.append(ul);
+    }
+    if (r.imagens && r.imagens.total) { const c = cartao("Imagens"); c.append(el("p", "forte", `${r.imagens.feitas} de ${r.imagens.total} cenas`), el("p", null, "Uma imagem por cena do vídeo longo.")); }
+    if (r.textos) {
+      const c = cartao("Títulos, descrições e hashtags", true);
+      c.append(el("span", "etq", "Vídeo longo"), el("p", "forte", r.textos.long.titulo), el("p", null, r.textos.long.descricao));
+      if (r.textos.long.tags.length) { const t = el("div", "tags"); r.textos.long.tags.forEach(x => t.append(el("span", null, x))); c.append(t); }
+      r.textos.shorts.forEach((s, i) => {
+        const d = el("details"); d.append(el("summary", null, `Short ${i + 1}: ${s.titulo}`));
+        const g = el("div"); g.style.cssText = "display:grid;gap:8px;margin-top:10px";
+        for (const [id, nome] of REDES) if (s.legendas[id]) { const l = cor(el("div", "leg"), id), b = el("b"); b.append(el("i"), nome); l.append(b, s.legendas[id]); g.append(l); }
+        d.append(g); c.append(d);
+      });
+    }
+    if (Object.keys(r.postagens || {}).length || ativo) {
+      const c = cartao("Postagens", true), box = el("div", "posts");
+      for (const [id, nome] of REDES) {
+        const linha = cor(el("div"), id), b = el("b"); b.append(el("i"), nome); const lista = el("div", "lista"), itens = (r.postagens || {})[id] || [];
+        if (!itens.length) lista.append(el("span", "nada", ativo ? "ainda não publicado" : "nada publicado"));
+        itens.forEach(p => { const a = el(p.url ? "a" : "span", null, p.titulo || p.chave); if (p.url) { a.href = p.url; a.target = "_blank"; a.rel = "noopener"; } lista.append(a); });
+        linha.append(b, lista); box.append(linha);
+      }
+      c.append(box);
+    }
+    if ((r.avisos || []).length) { const c = cartao("Avisos", true); r.avisos.forEach(a => c.append(el("p", null, a))); }
+    relogioRun();
+  }
+  $("runMais").addEventListener("toggle", ev => { if (ev.isTrusted) $("runMais").dataset.mexeu = "1"; });
+
   function render(d) {
     const primeira = !atual, mudou = !atual || atual.atualizado_em !== d.atualizado_em;
     atual = d; estado();
@@ -262,8 +359,15 @@
         chave = await deriva(salva, d); chaveSal = d.sal;
       }
       const dados = await abre(d, chave);
-      tranca(false); render(dados);
+      tranca(false); render(dados); if (pendenteRun && !run) recebeRun(pendenteRun);
     } catch { chave = null; guarda.del("painel-senha"); tranca(true); }
+  }
+  async function recebeRun(d) {
+    if (!d) return;
+    if (!d.cifrado) { renderRun(d); return; }
+    pendenteRun = d;
+    if (!chave || chaveSal !== d.sal) return;           // abre junto quando a senha for digitada
+    try { renderRun(await abre(d, chave)); } catch {}
   }
   $("cofre").addEventListener("submit", async ev => {
     ev.preventDefault();
@@ -273,13 +377,16 @@
       const k = await deriva(senha, pendente), dados = await abre(pendente, k);
       chave = k; chaveSal = pendente.sal;
       if ($("lembrar").checked) guarda.set("painel-senha", senha);
-      $("senha").value = ""; tranca(false); render(dados);
+      $("senha").value = ""; tranca(false); render(dados); if (pendenteRun) recebeRun(pendenteRun);
     } catch {
       $("trancaErro").hidden = false; const c = $("cofre"); c.classList.remove("treme"); void c.offsetWidth; c.classList.add("treme"); $("senha").select();
     } finally { bt.disabled = false; }
   });
   $("sair").addEventListener("click", () => { chave = null; atual = null; anterior = {}; guarda.del("painel-senha"); tranca(true); });
-  window.__painel = recebe;
+  window.__painel = recebe; window.__run = recebeRun;
+  function buscaRun() { const t = document.createElement("script"); t.src = `${RUN}?t=${Date.now()}`; t.async = true; t.onload = t.onerror = () => t.remove(); document.head.append(t); }
+  let ultimaRun = 0;
+  setInterval(() => { relogioRun(); const cada = run && run.status === "running" ? 12_000 : 60_000; if (Date.now() - ultimaRun >= cada) { ultimaRun = Date.now(); buscaRun(); } }, 1000);
   busca(); setInterval(busca, 60_000); setInterval(estado, 20_000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) busca(); });
 })();
