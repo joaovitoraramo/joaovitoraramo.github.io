@@ -208,3 +208,11 @@ li.failed .marca-e { border-color: var(--youtube); color: var(--youtube); }
 .balao span { font-size: 13.5px; color: var(--fg); }
 .balao small { font: 400 11.5px/1.4 var(--mono); color: var(--muted); margin-top: 5px; white-space: normal; }
 .explica:hover .balao, .explica:focus .balao, .explica:focus-visible .balao { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+/* alternância entre ganho por hora e total acumulado */
+.controles { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.modo { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-2); }
+.modo button { font: 600 13.5px var(--body); color: var(--muted); background: none; border: 0; padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: color .2s, background .2s; }
+.modo button[aria-pressed="true"] { color: #0B0B1E; background: linear-gradient(120deg, var(--brand-2), var(--brand)); box-shadow: 0 8px 20px -10px var(--brand); }
+.modo button:not([aria-pressed="true"]):hover { color: var(--fg); }
+.modo button[disabled] { opacity: .45; cursor: not-allowed; }

@@ -76,8 +76,11 @@
 
       <section class="vidro bloco sobe" style="--i:5">
         <div class="cab">
-          <div><h2>O ritmo de cada rede</h2><p id="curvaNota">Total de views a cada coleta. Passe o dedo ou o mouse pela curva para ver o momento exato.</p></div>
-          <div class="fichas" id="fichas"></div>
+          <div><h2>O ritmo de cada rede</h2><p id="curvaNota">Quantas views cada rede ganhou em cada hora.</p></div>
+          <div class="controles">
+            <div class="modo" id="modo" role="group" aria-label="O que a curva mostra"><button type="button" data-m="ritmo" aria-pressed="true">Por hora</button><button type="button" data-m="total" aria-pressed="false">Acumulado</button></div>
+            <div class="fichas" id="fichas"></div>
+          </div>
         </div>
         <div class="grafico" id="grafico"><div class="dica" id="dica"></div></div>
       </section>

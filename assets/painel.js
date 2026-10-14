@@ -71,7 +71,7 @@
     const totais = d.totais || {}, soma = Object.values(totais).reduce((a, b) => a + b, 0);
     conta($("total"), soma, "total");
     const selos = $("selos"); selos.replaceChildren();
-    const g = ganho(d.pontos || []);
+    const g = ganho(preenche(d.pontos || []));
     if (g && g.n > 0) { const s = el("span", "selo sobe-cor"); s.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 10l4-4 3 3 3-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; s.append(`+${nf.format(g.n)} ${g.rotulo}`); selos.append(s); }
     const seg = Object.values(d.seguidores || {}).reduce((a, b) => a + b, 0);
     selos.append(el("span", "selo", `${nf.format(seg)} ${seg === 1 ? "seguidor" : "seguidores"} somados`));
@@ -99,7 +99,7 @@
 
   // ---------- fichas por rede ----------
   function fichasRedes(d, primeira) {
-    const box = $("redes"), totais = d.totais || {}, pontos = d.pontos || [], seg = d.seguidores || {}, tempo = d.tempo_total_s || {};
+    const box = $("redes"), totais = d.totais || {}, pontos = preenche(d.pontos || []), seg = d.seguidores || {}, tempo = d.tempo_total_s || {};
     box.replaceChildren();
     REDES.forEach(([id, nome], i) => {
       const tem = id in totais, c = cor(el("article", "vidro rede" + (tem ? "" : " vazia") + (primeira ? " sobe" : "")), id);
@@ -145,8 +145,42 @@
   }
 
   // ---------- curva grande ----------
+  // valor acumulado de uma rede no instante t, interpolado entre as coletas em que ela foi realmente lida
+  function valorEm(bruto, ts, id, t) {
+    let a = -1, b = -1;
+    for (let k = 0; k < bruto.length; k++) { if (bruto[k][id] == null) continue; if (ts[k] <= t) a = k; else { b = k; break; } }
+    if (a < 0) return b < 0 ? 0 : bruto[b][id];
+    if (b < 0) return bruto[a][id];
+    return bruto[a][id] + (bruto[b][id] - bruto[a][id]) * (t - ts[a]) / ((ts[b] - ts[a]) || 1);
+  }
+  // acumulado com as lacunas preenchidas, para a curva não cair a zero onde uma rede não foi lida
+  const preenche = bruto => { const ts = bruto.map(p => new Date(p.ts).getTime()), ids = REDES.map(r => r[0]).filter(id => bruto.some(p => p[id] != null));
+    return bruto.map((p, k) => { const q = { ts: p.ts }; for (const id of ids) q[id] = Math.round(valorEm(bruto, ts, id, ts[k])); return q; }); };
+
+  // views ganhas por hora: reamostra o acumulado em janelas de relógio, para as coletas irregulares não distorcerem o ritmo
+  function ritmo(bruto) {
+    if (bruto.length < 2) return [];
+    const ts = bruto.map(p => new Date(p.ts).getTime()), t0 = ts[0], t1 = ts.at(-1), H = 36e5;
+    const passo = (t1 - t0) > 96 * H ? 3 * H : H;
+    const em = (id, t) => valorEm(bruto, ts, id, t);
+    const ids = REDES.map(r => r[0]).filter(id => bruto.some(p => p[id] != null)), out = [];
+    let ini = t0, fim = Math.ceil((t0 + 1) / passo) * passo;  // a primeira janela vai até a próxima hora cheia
+    while (ini < t1) {
+      fim = Math.min(fim, t1);
+      const fr = (fim - ini) / passo;
+      if (fr >= 0.25) { const p = { ts: new Date(fim).toISOString(), _de: ini, _ate: fim }; for (const id of ids) p[id] = Math.max(0, Math.round((em(id, fim) - em(id, ini)) / fr / (passo / H))); out.push(p); }
+      ini = fim; fim += passo;
+    }
+    return out;
+  }
+  let modo = "ritmo";
+
   function grafico(d) {
-    const box = $("grafico"), dica = $("dica"), pontos = d.pontos || [];
+    const box = $("grafico"), dica = $("dica"), bruto = d.pontos || [];
+    const hora = modo === "ritmo" ? ritmo(bruto) : [];
+    const porHora = hora.length >= 2, pontos = porHora ? hora : preenche(bruto);
+    const troca = $("modo");
+    troca.querySelectorAll("button").forEach(b => { const on = (b.dataset.m === "ritmo") === porHora; b.setAttribute("aria-pressed", on); b.disabled = b.dataset.m === "ritmo" && ritmo(bruto).length < 2; });
     box.querySelector("svg")?.remove();
     const ativos = REDES.filter(([id]) => pontos.some(p => p[id] != null));
     const fichas = $("fichas"); fichas.replaceChildren();
@@ -155,7 +189,9 @@
       b.addEventListener("click", () => { visiveis.has(id) ? visiveis.delete(id) : visiveis.add(id); grafico(atual); });
       fichas.append(b);
     }
-    $("curvaNota").textContent = pontos.length < 2 ? "A curva se forma a partir da segunda coleta. Volte em meia hora." : "Total de views a cada coleta. Passe o dedo ou o mouse pela curva para ver o momento exato.";
+    $("curvaNota").textContent = pontos.length < 2 ? "A curva se forma a partir da segunda coleta. Volte em meia hora."
+      : porHora ? "Quantas views cada rede ganhou em cada hora. Os picos mostram os horários em que o público aparece."
+      : "Total acumulado de views a cada coleta. Esta curva só sobe; para ver os horários fortes, use \"Por hora\".";
     if (!pontos.length) return;
     const estreito = box.clientWidth < 620;                       // no celular o desenho é mais alto para a curva respirar
     const W = estreito ? 560 : 1000, H = estreito ? 400 : 380, L = estreito ? 44 : 52, R = 18, T = 18, B = 34;
@@ -172,7 +208,8 @@
     }
     const longo = vao > 36 * 36e5, nt = Math.min(estreito ? 4 : 6, pontos.length);
     for (let k = 0; k < nt; k++) {
-      const t = nt === 1 ? t0 : t0 + vao * k / (nt - 1);
+      // por hora, o rótulo cai num ponto real (hora cheia); no acumulado, divide o período em partes iguais
+      const t = nt === 1 ? t0 : porHora ? ts[Math.round(k * (ts.length - 1) / (nt - 1))] : t0 + vao * k / (nt - 1);
       const tx = svg("text", { x: x(t), y: H - 8, "text-anchor": k === 0 && nt > 1 ? "start" : k === nt - 1 && nt > 1 ? "end" : "middle" });
       tx.textContent = longo ? `${dia(t)} ${hm(t)}` : hm(t); s.append(tx);
     }
@@ -195,10 +232,10 @@
       const r = s.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * W;
       let k = 0, melhor = Infinity; ts.forEach((t, i) => { const dd = Math.abs(x(t) - px); if (dd < melhor) { melhor = dd; k = i; } });
       const cx = x(ts[k]); mira.setAttribute("x1", cx); mira.setAttribute("x2", cx);
-      dica.replaceChildren(el("b", null, `${dia(ts[k])} · ${hm(ts[k])}`));
+      dica.replaceChildren(el("b", null, porHora ? `${dia(pontos[k]._de)} · das ${hm(pontos[k]._de)} às ${hm(pontos[k]._ate)}` : `${dia(ts[k])} · ${hm(ts[k])}`));
       mostra.slice().sort((a, b) => (pontos[k][b[0]] || 0) - (pontos[k][a[0]] || 0)).forEach(([id, nome]) => {
         const v = pontos[k][id] || 0; marcas[id].setAttribute("cx", cx); marcas[id].setAttribute("cy", y(v));
-        const l = cor(el("div"), id); l.append(el("i"), el("span", null, nome), el("span", null, nf.format(v))); dica.append(l);
+        const l = cor(el("div"), id); l.append(el("i"), el("span", null, nome), el("span", null, (porHora ? "+" : "") + nf.format(v) + (porHora ? "/h" : ""))); dica.append(l);
       });
       const bw = box.clientWidth, dw = dica.offsetWidth, sx = cx / W * r.width;
       const left = sx + 16 + dw > bw ? sx - dw - 16 : sx + 16;
@@ -347,6 +384,7 @@
     s.onerror = () => { s.remove(); if (!atual) $("estadoTxt").textContent = "Não foi possível buscar os dados. Nova tentativa em 1 minuto."; };
     document.head.append(s);
   }
+  $("modo").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b || b.disabled || !atual) return; modo = b.dataset.m; grafico(atual); });
   let larg = innerWidth, espera;
   addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => { if (atual && Math.abs(innerWidth - larg) > 40) { larg = innerWidth; grafico(atual); } }, 180); });
   // ---------- dados cifrados: a senha vira chave no navegador e nunca sai dele ----------
