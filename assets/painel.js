@@ -376,6 +376,7 @@
         if (link) { ch.href = p.url; ch.target = "_blank"; ch.rel = "noopener"; }
         ch.append(el("i"), nome, el("b", null, nf.format(p.views)));
         if (p.tempo_medio_s > 0) ch.append(`· ${dur(p.tempo_medio_s)} em média`);
+        if (p.retencao_pct > 0) ch.append(` · ${Math.round(p.retencao_pct)}% assistido`);
         chips.append(ch);
       }
       c.append(pilha, chips); box.append(c);
