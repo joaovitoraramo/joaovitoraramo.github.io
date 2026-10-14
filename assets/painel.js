@@ -474,6 +474,22 @@
       }
       c.append(box);
     }
+    if ((r.agenda || []).length) {
+      const c = cartao("Agenda nas outras redes", true), lista = el("div", "agenda");
+      c.append(el("p", null, "TikTok, Instagram, Facebook e Kwai recebem cada Short no mesmo horário em que ele sai no YouTube."));
+      const ROT = { feito: "publicado", pendente: "aguardando o horário", desistiu: "não publicado" };
+      [...r.agenda].sort((a, b) => a.quando.localeCompare(b.quando)).forEach(a => {
+        const linha = el("div", "ag-linha"), q = new Date(a.quando);
+        linha.append(el("span", "ag-hora", `${dia(q)} ${hm(q)}`), el("span", "ag-tit", a.titulo));
+        const st = el("span", "ag-redes");
+        for (const [id, nome] of REDES) {
+          const v = a.plataformas[id]; if (!v) continue;
+          const b = cor(el("span", "ag-rede " + v), id); b.append(el("i"), nome); b.title = ""; b.setAttribute("aria-label", `${nome}: ${ROT[v] || v}`); st.append(b);
+        }
+        linha.append(st); lista.append(linha);
+      });
+      c.append(lista);
+    }
     if ((r.avisos || []).length) { const c = cartao("Avisos", true); r.avisos.forEach(a => c.append(el("p", null, a))); }
     relogioRun();
   }
