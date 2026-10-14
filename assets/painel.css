@@ -33,7 +33,8 @@
 .legenda b { font-family: var(--mono); font-weight: 500; font-size: 14px; color: var(--muted); }
 
 .redes { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 16px; margin-top: 20px; }
-.rede { padding: 18px 18px 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; min-width: 0; transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s; }
+.rede { padding: 18px 18px 0; overflow: visible; display: flex; flex-direction: column; gap: 4px; min-width: 0; transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s; }
+.rede:hover, .rede:focus-within { z-index: 3; }
 .rede:hover { transform: translateY(-5px); border-color: color-mix(in srgb, var(--c) 55%, transparent); box-shadow: var(--shadow), 0 22px 46px -26px var(--c); }
 .rede .cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 15.5px; }
 .rede .cab span { display: inline-flex; align-items: center; gap: 9px; }
@@ -41,7 +42,7 @@
 .rede .valor { font-family: var(--display); font-weight: 700; font-size: clamp(32px, 4vw, 42px); line-height: 1.05; letter-spacing: -.02em; margin-top: 10px; }
 .rede .meta { font-size: 14px; color: var(--muted); min-height: 21px; }
 .rede .ganho { color: var(--up); font-weight: 700; }
-.rede svg { display: block; width: calc(100% + 36px); margin: 8px -18px 0; height: 62px; }
+.rede svg { display: block; width: calc(100% + 36px); margin: 8px -18px 0; height: 62px; border-radius: 0 0 calc(var(--r) - 1px) calc(var(--r) - 1px); }
 .rede.vazia .valor { font-size: 18px; font-family: var(--body); font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
 .rede.vazia { padding-bottom: 18px; }
 
@@ -192,3 +193,18 @@ li.failed .marca-e { border-color: var(--youtube); color: var(--youtube); }
 .posts .lista a, .posts .lista span { font-size: 13px; padding: 4px 10px; border-radius: 999px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); text-decoration: none; }
 .posts .lista a:hover { color: var(--fg); border-color: var(--c); }
 .posts .nada { color: var(--faint); }
+
+/* balão explicativo próprio (nada de tooltip nativo do navegador) */
+.explica { position: relative; font: inherit; color: var(--fg); background: none; border: 0; padding: 0 0 1px; cursor: help;
+  border-bottom: 1px dashed color-mix(in srgb, var(--c, var(--brand-2)) 70%, transparent); }
+.balao { position: absolute; left: 50%; bottom: calc(100% + 12px); z-index: 5; width: max-content; max-width: 230px; padding: 12px 14px; border-radius: 14px; text-align: left;
+  display: grid; gap: 2px; pointer-events: none; opacity: 0; transform: translate(-50%, 6px) scale(.96); transform-origin: 50% 100%;
+  background: color-mix(in srgb, var(--bg) 92%, transparent); border: 1px solid color-mix(in srgb, var(--c, var(--brand-2)) 55%, transparent);
+  box-shadow: 0 18px 40px -16px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.04) inset, 0 14px 30px -18px var(--c, var(--brand-2));
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: opacity .18s ease, transform .22s cubic-bezier(.2,.8,.2,1); }
+.balao::after { content: ""; position: absolute; left: 50%; top: 100%; width: 12px; height: 12px; transform: translate(-50%, -6px) rotate(45deg);
+  background: color-mix(in srgb, var(--bg) 92%, transparent); border-right: 1px solid color-mix(in srgb, var(--c, var(--brand-2)) 55%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--c, var(--brand-2)) 55%, transparent); }
+.balao b { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.05; color: var(--fg); font-variant-numeric: tabular-nums; }
+.balao span { font-size: 13.5px; color: var(--fg); }
+.balao small { font: 400 11.5px/1.4 var(--mono); color: var(--muted); margin-top: 5px; white-space: normal; }
+.explica:hover .balao, .explica:focus .balao, .explica:focus-visible .balao { opacity: 1; transform: translate(-50%, 0) scale(1); }

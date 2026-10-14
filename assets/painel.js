@@ -112,8 +112,20 @@
       c.append(m1);
       const extras = [];
       if (id in seg) extras.push(`${nf.format(seg[id])} ${seg[id] === 1 ? "seguidor" : "seguidores"}`);
-      if (tempo[id] > 0) extras.push(`${dur(tempo[id])} assistidos`);
-      c.append(el("div", "meta", extras.join(" · ")));
+      const m2 = el("div", "meta"); m2.textContent = extras.join(" · ");
+      if (tempo[id] > 0) {
+        // tempo assistido com a média por visualização num balão próprio (mouse, teclado ou toque)
+        const media = tempo[id] / Math.max(1, totais[id]);
+        const alvo = el("button", "explica"); alvo.type = "button"; alvo.textContent = `${dur(tempo[id])} assistidos`;
+        alvo.setAttribute("aria-describedby", `tip-${id}`);
+        const tip = el("span", "balao"); tip.id = `tip-${id}`; tip.setAttribute("role", "tooltip");
+        tip.append(el("b", null, media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " s"), el("span", null, "por visualização, em média"),
+                   el("small", null, `${dur(tempo[id])} assistidos ÷ ${nf.format(totais[id])} visualizações`));
+        alvo.append(tip);
+        if (extras.length) m2.append(" · ");
+        m2.append(alvo);
+      }
+      c.append(m2);
       // mini-curva
       const W = 240, H = 62, s = svg("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none", "aria-hidden": "true" });
       const serie = pontos.map(p => p[id] || 0);
