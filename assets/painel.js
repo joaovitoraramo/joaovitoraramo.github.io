@@ -145,6 +145,24 @@
   }
 
   // ---------- curva grande ----------
+  function botoesModo(d, horas, porHora) {
+    const pouco = ritmo(d.pontos || []).length < 2;
+    $("modo").querySelectorAll("button").forEach(b => {
+      const m = b.dataset.m, on = horas ? m === "horarios" : (m === "ritmo") === !!porHora && m !== "horarios";
+      b.setAttribute("aria-pressed", on); b.disabled = m !== "total" && pouco;
+    });
+  }
+  function fichasGrafico(d) {
+    const ativos = REDES.filter(([id]) => (d.pontos || []).some(p => p[id] != null));
+    const fichas = $("fichas"); fichas.replaceChildren();
+    for (const [id, nome] of ativos) {
+      const b = cor(el("button", "ficha"), id); b.type = "button"; b.setAttribute("aria-pressed", visiveis.has(id)); b.append(el("i"), nome);
+      b.addEventListener("click", () => { visiveis.has(id) ? visiveis.delete(id) : visiveis.add(id); grafico(atual); });
+      fichas.append(b);
+    }
+    return ativos;
+  }
+
   // valor acumulado de uma rede no instante t, interpolado entre as coletas em que ela foi realmente lida
   function valorEm(bruto, ts, id, t) {
     let a = -1, b = -1;
@@ -158,10 +176,10 @@
     return bruto.map((p, k) => { const q = { ts: p.ts }; for (const id of ids) q[id] = Math.round(valorEm(bruto, ts, id, ts[k])); return q; }); };
 
   // views ganhas por hora: reamostra o acumulado em janelas de relógio, para as coletas irregulares não distorcerem o ritmo
-  function ritmo(bruto) {
+  function ritmo(bruto, sempreHora = false) {
     if (bruto.length < 2) return [];
     const ts = bruto.map(p => new Date(p.ts).getTime()), t0 = ts[0], t1 = ts.at(-1), H = 36e5;
-    const passo = (t1 - t0) > 96 * H ? 3 * H : H;
+    const passo = !sempreHora && (t1 - t0) > 96 * H ? 3 * H : H;
     const em = (id, t) => valorEm(bruto, ts, id, t);
     const ids = REDES.map(r => r[0]).filter(id => bruto.some(p => p[id] != null)), out = [];
     let ini = t0, fim = Math.ceil((t0 + 1) / passo) * passo;  // a primeira janela vai até a próxima hora cheia
@@ -173,22 +191,75 @@
     }
     return out;
   }
-  let modo = "ritmo";
+  let modo = "horarios";
+
+  // ---------- melhores horários: média de views ganhas em cada hora do relógio, somando os dias coletados ----------
+  function horarios(bruto) {
+    const soma = Array.from({ length: 24 }, () => ({})), dias = Array.from({ length: 24 }, () => new Set());
+    for (const p of ritmo(bruto, true)) {
+      if (p._ate - p._de < 0.75 * 36e5) continue;                  // só horas quase inteiras entram na média
+      const h = new Date(p._de).getHours(); dias[h].add(new Date(p._de).toDateString());
+      for (const [id] of REDES) if (p[id] != null) soma[h][id] = (soma[h][id] || 0) + p[id];
+    }
+    return soma.map((v, h) => { const n = dias[h].size, med = {}; for (const id in v) med[id] = Math.round(v[id] / n); return { h, n, med, total: Object.values(med).reduce((a, b) => a + b, 0) }; });
+  }
+
+  function graficoHorarios(d) {
+    const box = $("grafico"), dica = $("dica"), hs = horarios(d.pontos || []);
+    box.querySelector("svg")?.remove();
+    const mostra = REDES.filter(([id]) => visiveis.has(id) && hs.some(x => x.med[id] != null));
+    const tot = x => mostra.reduce((a, [id]) => a + (x.med[id] || 0), 0);
+    const comDados = hs.filter(x => x.n > 0), top = [...comDados].sort((a, b) => tot(b) - tot(a)).slice(0, 3).filter(x => tot(x) > 0).map(x => x.h);
+    const diasMax = Math.max(0, ...hs.map(x => x.n));
+    $("curvaNota").textContent = comDados.length < 24
+      ? `Média de views ganhas em cada hora do dia. ${24 - comDados.length} horários ainda sem dados: a coleta a cada 30 minutos completa o dia sozinha.`
+      : `Média de views ganhas em cada hora do dia, em ${diasMax} ${diasMax === 1 ? "dia" : "dias"} de coleta. As barras destacadas são os melhores horários.`;
+    const estreito = box.clientWidth < 620, W = estreito ? 560 : 1000, H = estreito ? 400 : 380, L = estreito ? 40 : 52, R = 10, T = 30, B = 34;
+    const max = teto(Math.max(1, ...hs.map(tot))), y = v => T + (H - T - B) * (1 - v / max), col = (W - L - R) / 24, larg = col * 0.7;
+    const sv = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Média de views por hora do dia" });
+    for (let k = 0; k <= 4; k++) {
+      const v = max * k / 4; sv.append(svg("line", { class: "grade", x1: L, x2: W - R, y1: y(v), y2: y(v) }));
+      const tx = svg("text", { x: L - 10, y: y(v) + 4, "text-anchor": "end" }); tx.textContent = curto.format(v); sv.append(tx);
+    }
+    hs.forEach((x, i) => {
+      const cx = L + col * i + (col - larg) / 2, g = svg("g", { class: "barra-h" + (top.includes(x.h) ? " top" : "") + (x.n ? "" : " vazia") });
+      g.style.setProperty("--d", `${i * 25}ms`);
+      if (!x.n) g.append(svg("rect", { x: cx, y: T, width: larg, height: H - T - B, rx: 4, class: "sem" }));
+      let base = H - B;
+      for (const [id] of mostra) {
+        const v = x.med[id] || 0; if (!v) continue;
+        const h = (H - T - B) * v / max; base -= h;
+        const r = svg("rect", { x: cx, y: base, width: larg, height: Math.max(1, h - 1), rx: 3 }); r.style.fill = `var(--${id})`; g.append(r);
+      }
+      if (top.includes(x.h)) { const tx = svg("text", { x: cx + larg / 2, y: base - 8, "text-anchor": "middle", class: "rotulo-top" }); tx.textContent = `${top.indexOf(x.h) + 1}º`; g.append(tx); }
+      if (i % (estreito ? 3 : 2) === 0) { const tx = svg("text", { x: cx + larg / 2, y: H - 10, "text-anchor": "middle" }); tx.textContent = `${String(x.h).padStart(2, "0")}h`; g.append(tx); }
+      const alvo = svg("rect", { x: L + col * i, y: T, width: col, height: H - T - B, fill: "transparent" }); g.append(alvo);
+      const mostraDica = ev => {
+        dica.replaceChildren(el("b", null, `das ${String(x.h).padStart(2, "0")}:00 às ${String((x.h + 1) % 24).padStart(2, "0")}:00`));
+        if (!x.n) dica.append(el("div", null, "Sem dados ainda neste horário."));
+        else {
+          for (const [id, nome] of mostra) { if (x.med[id] == null) continue; const l = cor(el("div"), id); l.append(el("i"), el("span", null, nome), el("span", null, `+${nf.format(x.med[id])}`)); dica.append(l); }
+          dica.append(el("div", null, `média de ${x.n} ${x.n === 1 ? "dia" : "dias"}`));
+        }
+        const r = sv.getBoundingClientRect(), bw = box.clientWidth, dw = dica.offsetWidth, sx = (cx + larg / 2) / W * r.width;
+        dica.style.transform = `translate(${Math.max(0, sx + 16 + dw > bw ? sx - dw - 16 : sx + 16)}px, ${Math.max(0, (ev.clientY - r.top) - dica.offsetHeight - 14)}px)`;
+        box.classList.add("ativo");
+      };
+      g.addEventListener("pointermove", mostraDica); g.addEventListener("pointerdown", mostraDica);
+      sv.append(g);
+    });
+    sv.addEventListener("pointerleave", () => box.classList.remove("ativo"));
+    box.prepend(sv);
+  }
 
   function grafico(d) {
+    if (modo === "horarios") { botoesModo(d, true); fichasGrafico(d); return graficoHorarios(d); }
     const box = $("grafico"), dica = $("dica"), bruto = d.pontos || [];
     const hora = modo === "ritmo" ? ritmo(bruto) : [];
     const porHora = hora.length >= 2, pontos = porHora ? hora : preenche(bruto);
-    const troca = $("modo");
-    troca.querySelectorAll("button").forEach(b => { const on = (b.dataset.m === "ritmo") === porHora; b.setAttribute("aria-pressed", on); b.disabled = b.dataset.m === "ritmo" && ritmo(bruto).length < 2; });
+    botoesModo(d, false, porHora);
     box.querySelector("svg")?.remove();
-    const ativos = REDES.filter(([id]) => pontos.some(p => p[id] != null));
-    const fichas = $("fichas"); fichas.replaceChildren();
-    for (const [id, nome] of ativos) {
-      const b = cor(el("button", "ficha"), id); b.type = "button"; b.setAttribute("aria-pressed", visiveis.has(id)); b.append(el("i"), nome);
-      b.addEventListener("click", () => { visiveis.has(id) ? visiveis.delete(id) : visiveis.add(id); grafico(atual); });
-      fichas.append(b);
-    }
+    const ativos = fichasGrafico(d);
     $("curvaNota").textContent = pontos.length < 2 ? "A curva se forma a partir da segunda coleta. Volte em meia hora."
       : porHora ? "Quantas views cada rede ganhou em cada hora. Os picos mostram os horários em que o público aparece."
       : "Total acumulado de views a cada coleta. Esta curva só sobe; para ver os horários fortes, use \"Por hora\".";

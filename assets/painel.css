@@ -216,3 +216,13 @@ li.failed .marca-e { border-color: var(--youtube); color: var(--youtube); }
 .modo button[aria-pressed="true"] { color: #0B0B1E; background: linear-gradient(120deg, var(--brand-2), var(--brand)); box-shadow: 0 8px 20px -10px var(--brand); }
 .modo button:not([aria-pressed="true"]):hover { color: var(--fg); }
 .modo button[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* melhores horários: 24 colunas, uma por hora do relógio */
+.barra-h rect { transition: opacity .2s; transform-box: fill-box; transform-origin: 50% 100%; animation: cresce .7s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d); }
+.barra-h rect[fill="transparent"] { animation: none; cursor: pointer; }
+.barra-h .sem { fill: none; stroke: var(--line-2); stroke-dasharray: 3 5; animation: none; }
+.barra-h:not(.top) rect:not(.sem):not([fill="transparent"]) { opacity: .62; }
+.barra-h:hover rect:not(.sem):not([fill="transparent"]) { opacity: 1; }
+.barra-h.top rect:not(.sem):not([fill="transparent"]) { filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--brand-2) 45%, transparent)); }
+.grafico .rotulo-top { font-family: var(--display); font-weight: 700; font-size: 14px; fill: var(--fg); }
+@keyframes cresce { from { transform: scaleY(0); } to { transform: scaleY(1); } }
