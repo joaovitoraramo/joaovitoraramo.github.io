@@ -144,6 +144,45 @@
     });
   }
 
+  // ---------- qualidade: o que é difícil de inflar ----------
+  function qualidade(d) {
+    const box = $("qualidade"), tot = d.totais || {}, seg = d.seguidores || {}, tempo = d.tempo_total_s || {}, cp = d.curtidas_perfil || {};
+    const redes = REDES.filter(([id]) => tot[id] > 0);
+    if (!redes.length) return;
+    const linhas = redes.map(([id, nome]) => {
+      let likes = 0, tem = false;
+      for (const v of d.videos || []) { const p = v.plataformas[id]; if (p && p.likes != null) { likes += p.likes; tem = true; } }
+      if (!tem && cp[id] != null) { likes = cp[id]; tem = true; }          // o Kwai só informa curtidas do perfil inteiro
+      const views = tot[id];
+      return { id, nome, views, curt: tem ? 100 * likes / views : null, seg: id in seg ? 1000 * seg[id] / views : null, t: tempo[id] > 0 ? tempo[id] / views : null };
+    });
+    const medidas = [
+      ["curt", "Curtidas a cada 100 views", v => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }), "Quanto da audiência gostou o bastante para tocar no coração."],
+      ["seg", "Seguidores a cada mil views", v => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }), "Quanto da audiência quis ver mais do canal. É o que mais pesa para crescer."],
+      ["t", "Segundos assistidos por view", v => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " s", "Só as redes que informam tempo assistido."],
+    ];
+    box.replaceChildren();
+    for (const [k, titulo, fmt, ajuda] of medidas) {
+      const comValor = linhas.filter(l => l[k] != null), max = Math.max(0, ...comValor.map(l => l[k]));
+      const c = el("div", "medida"); c.append(el("h3", null, titulo), el("p", null, ajuda));
+      const lista = el("div", "barras-q");
+      for (const l of linhas) {
+        const linha = cor(el("div", "linha-q" + (l[k] != null && l[k] === max && max > 0 && comValor.length > 1 ? " melhor" : "")), l.id);
+        const n = el("span", "nome-q"); n.append(el("i"), l.nome);
+        const trilho = el("span", "trilho-q"), barra = el("b"); trilho.append(barra);
+        const val = el("span", "valor-q", l[k] == null ? "não informa" : fmt(l[k]));
+        if (l[k] == null) linha.classList.add("sem-q");
+        else setTimeout(() => { barra.style.width = (max ? Math.max(3, 100 * l[k] / max) : 0) + "%"; }, 80);
+        linha.append(n, trilho, val); lista.append(linha);
+      }
+      c.append(lista); box.append(c);
+    }
+    const kwai = linhas.find(l => l.id === "kwai"), fb = linhas.find(l => l.id === "facebook"), avisos = [];
+    if (fb && fb.t != null && fb.t < 6) avisos.push(`No Facebook cada view durou ${fb.t.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} s em média: a rede conta como view quem só passou pelo vídeo no feed.`);
+    if (kwai && kwai.curt != null) avisos.push("No Kwai as curtidas são do perfil inteiro, porque o app não mostra curtidas por vídeo na tela lida pelo celular.");
+    if (avisos.length) { const a = el("div", "nota-q"); avisos.forEach(t => a.append(el("p", null, t))); box.append(a); }
+  }
+
   // ---------- curva grande ----------
   function botoesModo(d, horas, porHora) {
     const pouco = ritmo(d.pontos || []).length < 2;
@@ -443,7 +482,7 @@
     const primeira = !atual, mudou = !atual || atual.atualizado_em !== d.atualizado_em;
     atual = d; estado();
     if (!mudou) return;
-    topo(d); fichasRedes(d, primeira); grafico(d); videos(d);
+    topo(d); fichasRedes(d, primeira); qualidade(d); grafico(d); videos(d);
     const cp = d.curtidas_perfil || {};
     $("rodape").textContent = "Dados coletados a cada 30 minutos direto das plataformas" + (cp.kwai != null ? `. No Kwai o perfil soma ${nf.format(cp.kwai)} curtidas.` : ".");
   }
