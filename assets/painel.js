@@ -152,9 +152,10 @@
     const linhas = redes.map(([id, nome]) => {
       let likes = 0, tem = false;
       for (const v of d.videos || []) { const p = v.plataformas[id]; if (p && p.likes != null) { likes += p.likes; tem = true; } }
-      if (!tem && cp[id] != null) { likes = cp[id]; tem = true; }          // o Kwai só informa curtidas do perfil inteiro
+      const perfil = !tem && cp[id] != null;
+      if (perfil) { likes = cp[id]; tem = true; }          // sem curtidas por vídeo, vale o total do perfil (Kwai antigo)
       const views = tot[id];
-      return { id, nome, views, curt: tem ? 100 * likes / views : null, seg: id in seg ? 1000 * seg[id] / views : null, t: tempo[id] > 0 ? tempo[id] / views : null };
+      return { id, nome, views, perfil, curt: tem ? 100 * likes / views : null, seg: id in seg ? 1000 * seg[id] / views : null, t: tempo[id] > 0 ? tempo[id] / views : null };
     });
     const medidas = [
       ["curt", "Curtidas a cada 100 views", v => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }), "Quanto da audiência gostou o bastante para tocar no coração."],
@@ -179,7 +180,8 @@
     }
     const kwai = linhas.find(l => l.id === "kwai"), fb = linhas.find(l => l.id === "facebook"), avisos = [];
     if (fb && fb.t != null && fb.t < 6) avisos.push(`No Facebook cada view durou ${fb.t.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} s em média: a rede conta como view quem só passou pelo vídeo no feed.`);
-    if (kwai && kwai.curt != null) avisos.push("No Kwai as curtidas são do perfil inteiro, porque o app não mostra curtidas por vídeo na tela lida pelo celular.");
+    if (kwai && kwai.perfil) avisos.push("No Kwai as curtidas são do perfil inteiro, porque ainda não há leitura por vídeo.");
+    else if (kwai && kwai.curt != null) avisos.push("No Kwai os números por vídeo vêm dos 12 vídeos mais recentes, abertos um a um pelo celular.");
     if (avisos.length) { const a = el("div", "nota-q"); avisos.forEach(t => a.append(el("p", null, t))); box.append(a); }
   }
 
@@ -377,6 +379,7 @@
         ch.append(el("i"), nome, el("b", null, nf.format(p.views)));
         if (p.tempo_medio_s > 0) ch.append(`· ${dur(p.tempo_medio_s)} em média`);
         if (p.retencao_pct > 0) ch.append(` · ${Math.round(p.retencao_pct)}% assistido`);
+        if (p.conclusao_pct > 0) ch.append(` · ${Math.round(p.conclusao_pct)}% até o fim`);
         chips.append(ch);
       }
       c.append(pilha, chips); box.append(c);
