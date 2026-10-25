@@ -593,6 +593,35 @@
       const c = el("div", "kpi"); c.append(el("span", null, rot), el("b", "num", val)); if (nota) c.append(el("em", null, nota)); kp.append(c);
     }
     k.append(kp);
+    const sd = r.studio || {}, sc = sd.canal || {};
+    if (Object.keys(sc).length || (sd.shorts || []).length) {
+      const quando = sc.ts ? ` Lido no celular em ${dataHora(sc.ts)}.` : "";
+      const s = cartaoRel("Do app YouTube Studio", `O que a API não entrega.${quando}`, true), sk = el("div", "kpis");
+      for (const [rot, val, nota] of [
+        ["Impressões dos longos", sc.impressoes_longos != null ? nf.format(sc.impressoes_longos) : "–", "últimos 28 dias"],
+        ["CTR da capa (longos)", sc.ctr_longos_pct != null ? pct(sc.ctr_longos_pct) : "–", "canais de história: 4% a 8%"],
+        ["Shorts: ficaram", sc.shorts_continuaram_pct != null ? pct(sc.shorts_continuaram_pct) : "–", sc.shorts_continuaram_pct != null ? `${pct(100 - sc.shorts_continuaram_pct)} deslizaram` : null],
+        ["Espectadores novos", sc.novos_pct != null ? pct(sc.novos_pct) : "–", sc.casuais_pct != null ? `${pct(sc.casuais_pct)} voltam às vezes` : null],
+        ["Cortes ligados ao longo", nf.format(sd.relacionados || 0), "vídeo relacionado"]]) {
+        const c = el("div", "kpi"); c.append(el("span", null, rot), el("b", "num", val)); if (nota) c.append(el("em", null, nota)); sk.append(c);
+      }
+      s.append(sk);
+      if ((sc.termos_busca || []).length) s.append(el("p", "notaRel", "Buscas que trouxeram gente aos Shorts: " + sc.termos_busca.map(t => `“${t.termo}”`).join(", ")));
+      const q = sc.qualificacao || {};
+      const metas = [["Inscritos", q.inscritos, q.inscritos_meta], ["Horas qualificadas (365 dias)", q.horas_qualificadas, q.horas_meta],
+        ["Views qualificadas de Shorts (90 dias)", q.views_shorts_qualificadas, q.views_shorts_meta]].filter(x => x[1] != null && x[2]);
+      if (metas.length) {
+        const m = cartaoRel("Caminho para a monetização", "Primeiro marco do YouTube: 500 inscritos e 3 mil horas ou 3 milhões de views de Shorts, contando só o que é qualificado.", true);
+        m.append(barras(metas.map(([nome, a, meta]) => ({ nome, a: Math.min(100, 100 * a / meta), val: pct(100 * a / meta),
+          dica: `<b>${escHtml(nome)}</b><br>${nf.format(a)} de ${nf.format(meta)}` })), 100, "medios"));
+      }
+      if ((sd.shorts || []).length) {
+        const g = cartaoRel("Gancho dos Shorts", "Quanto do público ficou em vez de deslizar, lido com 2 a 10 dias no ar.", true);
+        g.append(barras(sd.shorts.map(x => ({ nome: x.titulo, chip: x.tipo === "autonomo" ? "autônomo" : x.tipo, a: x.continuaram_pct, val: pct(x.continuaram_pct),
+          dica: `<b>${escHtml(x.titulo)}</b><br>${pct(x.continuaram_pct)} continuaram · ${pct(100 - x.continuaram_pct)} deslizaram` +
+            (x.views_intencionais != null ? `<br>${nf.format(x.views_intencionais)} views intencionais` : "") })), 100, "largos"));
+      }
+    }
     const f = cartaoRel("Shorts × vídeos longos", "Views de cada formato; a dica mostra quanto do vídeo as pessoas assistem.");
     f.append(barras(r.formatos.map(x => ({ nome: x.formato, a: x.views, val: nf.format(x.views),
       dica: `<b>${escHtml(x.formato)}</b><br>${nf.format(x.views)} views · ${nf.format(x.horas)} h<br>${x.duracao_media_s} s por view · ${pct(x.pct_assistida)} assistido<br>+${x.inscritos} inscritos` }))));
