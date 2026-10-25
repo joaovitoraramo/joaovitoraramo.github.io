@@ -44,7 +44,14 @@
         </form>
       </section>
       <div id="conteudo">
-      <div class="sobe" style="--i:0; margin-bottom: 14px"><span class="estado" id="estado"><span class="pulso"></span><span id="estadoTxt">Buscando a última coleta</span></span></div>
+      <div class="barraTopo sobe" style="--i:0">
+        <span class="estado" id="estado"><span class="pulso"></span><span id="estadoTxt">Buscando a última coleta</span></span>
+        <div class="abas" role="tablist" aria-label="Seções do painel">
+          <button type="button" role="tab" id="tabVivo" aria-controls="abaVivo" aria-selected="true">Ao vivo</button>
+          <button type="button" role="tab" id="tabRel" aria-controls="abaRel" aria-selected="false">Relatório</button>
+        </div>
+      </div>
+      <div id="abaVivo" role="tabpanel" aria-labelledby="tabVivo">
 
       <section class="vidro bloco run sobe" id="run" hidden style="--i:1" aria-labelledby="runTit">
         <div class="cab">
@@ -95,6 +102,22 @@
         <div class="videos" id="videos"><div class="vazio">Os vídeos aparecem aqui depois da primeira coleta.</div></div>
       </section>
       </div>
+
+      <div id="abaRel" role="tabpanel" aria-labelledby="tabRel" hidden>
+        <section class="vidro bloco relCab sobe" style="--i:1" aria-labelledby="relTit">
+          <div class="cab">
+            <div><span class="rotulo">YouTube Analytics</span><h2 id="relTit">Relatório do canal</h2><p id="relMeta">Buscando o último relatório…</p></div>
+            <div class="controles">
+              <div class="modo" id="relModo" role="group" aria-label="Como ver o relatório"><button type="button" data-v="graficos" aria-pressed="true">Gráficos</button><button type="button" data-v="texto" aria-pressed="false">Texto</button></div>
+              <button type="button" class="botao" id="relBaixar" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Baixar .md</button>
+            </div>
+          </div>
+          <div class="relHoras" id="relHoras"></div>
+        </section>
+        <div class="relGraficos" id="relGraficos"></div>
+        <article class="vidro bloco relTexto" id="relTexto" hidden></article>
+      </div>
+      </div>
     </main>
 
     <footer class="rodape">
@@ -102,6 +125,7 @@
       <nav aria-label="Rodapé"><a href="./">Início</a><a href="privacy.html">Privacidade</a><a href="terms.html">Termos</a><button type="button" class="sair" id="sair" hidden>Bloquear painel</button></nav>
     </footer>
   </div>
+  <div class="relDica" id="relDica" role="tooltip"></div>
   <script src="assets/painel.js"></script>
 </body>
 </html>

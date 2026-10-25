@@ -517,6 +517,155 @@
   $("modo").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b || b.disabled || !atual) return; modo = b.dataset.m; grafico(atual); });
   let larg = innerWidth, espera;
   addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => { if (atual && Math.abs(innerWidth - larg) > 40) { larg = innerWidth; grafico(atual); } }, 180); });
+  // ---------- abas ----------
+  function abreAba(qual) {
+    const rel = qual === "rel";
+    $("tabVivo").setAttribute("aria-selected", String(!rel)); $("tabRel").setAttribute("aria-selected", String(rel));
+    $("abaVivo").hidden = rel; $("abaRel").hidden = !rel;
+    if (rel) { buscaRel(); if (relatorio) relGraficos(relatorio); }
+    try { history.replaceState(null, "", rel ? "#relatorio" : location.pathname); } catch {}
+  }
+  $("tabVivo").addEventListener("click", () => abreAba("vivo"));
+  $("tabRel").addEventListener("click", () => abreAba("rel"));
+  $("tabVivo").parentElement.addEventListener("keydown", ev => {
+    if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    const vai = $("tabVivo").getAttribute("aria-selected") === "true" ? "rel" : "vivo"; abreAba(vai); $(vai === "rel" ? "tabRel" : "tabVivo").focus();
+  });
+
+  // ---------- relatório do YouTube (gerado a cada 48 h pelo Mac) ----------
+  const RELATORIO = window.PAINEL_RELATORIO || DADOS.replace(/\.js$/, "-relatorio.js");
+  let relatorio = null, relVista = "graficos";
+  const dataHora = t => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const pct = v => (v ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%";
+  const dataBr = s => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+  function falta(t) {
+    const min = Math.round((new Date(t).getTime() - Date.now()) / 6e4);
+    if (min <= 0) return "a qualquer momento";
+    const d = Math.floor(min / 1440), h = Math.floor(min % 1440 / 60), m = min % 60;
+    return "em " + [d && `${d} ${d > 1 ? "dias" : "dia"}`, h && `${h} h`, !d && m && `${m} min`].filter(Boolean).join(" e ");
+  }
+  function relHoras() {
+    if (!relatorio) return;
+    const r = relatorio, box = $("relHoras"); box.textContent = "";
+    const item = (rot, val, nota) => { const c = el("div", "relHora"); c.append(el("span", null, rot), el("b", null, val)); if (nota) c.append(el("em", null, nota)); box.append(c); };
+    item("Dados do relatório", `${dataBr(r.periodo.inicio)} a ${dataBr(r.periodo.fim)}`, "o YouTube atrasa 1 a 2 dias");
+    item("Gerado em", dataHora(r.gerado_em), null);
+    item("Próximo relatório", dataHora(r.proximo_em), falta(r.proximo_em));
+    $("relMeta").textContent = "Público, origem do tráfego, retenção e os vídeos que mais renderam no YouTube. Atualiza sozinho a cada 2 dias.";
+  }
+  const dica = $("relDica");
+  function mostraDica(ev, html) {
+    dica.innerHTML = html; dica.classList.add("on");
+    const r = dica.getBoundingClientRect(), x = Math.min(innerWidth - r.width - 12, (ev.clientX ?? 0) + 14), y = (ev.clientY ?? 0) - r.height - 12;
+    dica.style.left = `${Math.max(12, x)}px`; dica.style.top = `${y < 8 ? (ev.clientY ?? 0) + 18 : y}px`;
+  }
+  const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  // uma linha por item: nome, barra (um ou dois segmentos) e o valor; a dica mostra o detalhe
+  function barras(itens, max, cls) {
+    const box = el("div", "barras" + (cls ? " " + cls : "")), m = max || Math.max(...itens.map(i => (i.a || 0) + (i.b || 0)), 1);
+    for (const it of itens) {
+      const linha = el("div", "barra"); linha.tabIndex = 0;
+      const nome = el("span", "nome"); if (it.chip) nome.append(el("span", "tipoChip", it.chip)); nome.append(it.nome); if (it.sub) nome.append(el("small", null, it.sub));
+      const tr = el("span", "trilhoB"), seg = (v, cls) => { if (!v) return; const i = el("i", cls); i.style.width = `${100 * v / m}%`; tr.append(i); };
+      seg(it.a); seg(it.b, "b");
+      linha.append(nome, tr, el("span", "val", it.val));
+      linha.title = `${it.nome}: ${it.val}`;
+      const mostra = ev => { linha.removeAttribute("title"); mostraDica(ev, it.dica || `${escHtml(it.nome)}<br><b>${escHtml(it.val)}</b>`); };
+      linha.addEventListener("pointermove", mostra); linha.addEventListener("pointerleave", () => dica.classList.remove("on"));
+      linha.addEventListener("focus", () => { const r = linha.getBoundingClientRect(); mostra({ clientX: r.left + r.width / 2, clientY: r.top }); });
+      linha.addEventListener("blur", () => dica.classList.remove("on"));
+      box.append(linha);
+    }
+    return box;
+  }
+  function cartaoRel(titulo, nota, largo) {
+    const c = el("section", "vidro relCard sobe" + (largo ? " largo" : "")); c.append(el("h3", null, titulo)); if (nota) c.append(el("p", null, nota));
+    $("relGraficos").append(c); return c;
+  }
+  function relGraficos(r) {
+    const box = $("relGraficos"); box.textContent = "";
+    const t = r.total;
+    const k = cartaoRel("Visão geral", `Somando ${dataBr(r.periodo.inicio)} a ${dataBr(r.periodo.fim)}.`, true), kp = el("div", "kpis");
+    for (const [rot, val, nota] of [["Views", nf.format(t.views), null], ["Horas assistidas", nf.format(Math.round(t.horas)), null],
+      ["Inscritos", `+${t.inscritos_ganhos - t.inscritos_perdidos}`, `${t.inscritos_ganhos} ganhos, ${t.inscritos_perdidos} perdidos`],
+      ["Duração média", `${t.duracao_media_s} s`, "por visualização"], ["Curtidas", nf.format(t.curtidas), null],
+      ["Comentários", nf.format(t.comentarios), `${nf.format(t.compartilhamentos)} compartilhamentos`]]) {
+      const c = el("div", "kpi"); c.append(el("span", null, rot), el("b", "num", val)); if (nota) c.append(el("em", null, nota)); kp.append(c);
+    }
+    k.append(kp);
+    const f = cartaoRel("Shorts × vídeos longos", "Views de cada formato; a dica mostra quanto do vídeo as pessoas assistem.");
+    f.append(barras(r.formatos.map(x => ({ nome: x.formato, a: x.views, val: nf.format(x.views),
+      dica: `<b>${escHtml(x.formato)}</b><br>${nf.format(x.views)} views · ${nf.format(x.horas)} h<br>${x.duracao_media_s} s por view · ${pct(x.pct_assistida)} assistido<br>+${x.inscritos} inscritos` }))));
+    f.append(el("p", "notaRel", r.formatos.map(x => `${x.formato}: ${x.duracao_media_s} s em média (${pct(x.pct_assistida)} do vídeo)`).join(" · ")));
+    const homens = r.idade.reduce((s, x) => s + x.homens, 0);
+    const i = cartaoRel("Idade e gênero", `Quem assiste logado. ${pct(homens)} homens.`);
+    const lg = el("div", "legendaRel"); const s1 = el("span"), s2 = el("span"); s1.append(el("i"), "Homens"); s2.append(el("i", "b"), "Mulheres"); lg.append(s1, s2); i.append(lg);
+    i.append(barras(r.idade.map(x => ({ nome: x.faixa, a: x.homens, b: x.mulheres, val: pct(x.homens + x.mulheres),
+      dica: `<b>${escHtml(x.faixa)} anos</b>: ${pct(x.homens + x.mulheres)}<br>Homens ${pct(x.homens)} · Mulheres ${pct(x.mulheres)}` }))));
+    const o = cartaoRel("De onde vêm as views", "Origem do tráfego no YouTube.");
+    const principais = r.trafego.slice(0, 6), outros = r.trafego.slice(6).reduce((s, x) => s + x.pct, 0);
+    o.append(barras([...principais.map(x => ({ nome: x.origem, a: x.pct, val: pct(x.pct), dica: `<b>${escHtml(x.origem)}</b><br>${nf.format(x.views)} views · ${pct(x.pct)}` })),
+      ...(outros > 0 ? [{ nome: "Outras origens", a: outros, val: pct(outros) }] : [])], 100));
+    if (r.trafego_longos.length) o.append(el("p", "notaRel", "Nos longos: " + r.trafego_longos.slice(0, 3).map(x => `${x.origem} ${pct(x.pct)}`).join(" · ")));
+    const ret = r.retencao_longos.filter(x => x.ret_30s != null);
+    const rt = cartaoRel("Retenção dos longos aos 30 s", "Quanto do público ainda assiste no segundo 30 de cada vídeo longo.");
+    rt.append(ret.length ? barras(ret.map(x => ({ nome: x.titulo, sub: x.dia, a: x.ret_30s, val: pct(x.ret_30s),
+      dica: `<b>${escHtml(x.titulo)}</b><br>${x.dia} · ${Math.floor(x.dur_s / 60)}:${String(x.dur_s % 60).padStart(2, "0")}<br>${pct(x.ret_30s)} ainda assistindo aos 30 s` })), 100, "medios")
+      : el("div", "vazio", "Sem dados de retenção ainda."));
+    const sem = r.retencao_longos.length - ret.length; if (sem) rt.append(el("p", "notaRel", `${sem} vídeo(s) recente(s) ainda sem dados no YouTube.`));
+    const tp = cartaoRel("Top 10 vídeos", "Os que mais tiveram views no período.", true);
+    tp.append(barras(r.top.map(x => ({ nome: x.titulo, chip: x.tipo, a: x.views, val: nf.format(x.views),
+      dica: `<b>${escHtml(x.titulo)}</b><br>${escHtml(x.tipo)} · ${nf.format(x.views)} views<br>${pct(x.pct_assistida)} assistido · ${x.duracao_media_s} s por view<br>+${x.inscritos} inscritos · ${nf.format(x.curtidas)} curtidas` })), 0, "largos"));
+    const p = cartaoRel("Países", null);
+    p.append(barras(r.paises.map(x => ({ nome: x.pais, a: x.pct, val: pct(x.pct), dica: `<b>${escHtml(x.pais)}</b><br>${nf.format(x.views)} views · ${pct(x.pct)}` })), 100));
+    const dv = cartaoRel("Dispositivos", null);
+    dv.append(barras(r.dispositivos.map(x => ({ nome: x.dispositivo, a: x.pct, val: pct(x.pct) })), 100));
+  }
+  // o mesmo texto do .md, com títulos, listas e tabelas
+  function relTexto(md) {
+    const box = $("relTexto"); box.textContent = "";
+    const inline = s => escHtml(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    const linhas = md.split("\n"); let lista = null;
+    for (let n = 0; n < linhas.length; n++) {
+      const l = linhas[n];
+      if (!l.startsWith("- ")) lista = null;
+      if (/^#{1,3} /.test(l)) { const h = el(`h${l.indexOf(" ")}`); h.innerHTML = inline(l.replace(/^#+ /, "")); box.append(h); }
+      else if (l.startsWith("- ")) { if (!lista) { lista = el("ul"); box.append(lista); } const li = el("li"); li.innerHTML = inline(l.slice(2)); lista.append(li); }
+      else if (l.startsWith("|")) {
+        const rows = []; while (n < linhas.length && linhas[n].startsWith("|")) { rows.push(linhas[n]); n++; } n--;
+        const cel = r => r.slice(1, -1).split("|").map(c => c.trim());
+        const wrap = el("div", "tabelaRel"), tb = el("table"), th = el("tr");
+        cel(rows[0]).forEach(c => { const e = el("th"); e.innerHTML = inline(c); th.append(e); });
+        tb.append(th);
+        rows.slice(2).forEach(r => { const tr = el("tr"); cel(r).forEach(c => { const e = el("td"); e.innerHTML = inline(c); tr.append(e); }); tb.append(tr); });
+        wrap.append(tb); box.append(wrap);
+      } else if (l.trim()) { const p = el("p"); p.innerHTML = inline(l); box.append(p); }
+    }
+  }
+  function renderRel(r) {
+    const novo = !relatorio || relatorio.gerado_em !== r.gerado_em; relatorio = r;
+    relHoras(); $("relBaixar").disabled = false;
+    if (novo) { relGraficos(r); relTexto(r.markdown || ""); }
+  }
+  $("relModo").addEventListener("click", ev => {
+    const b = ev.target.closest("button"); if (!b) return; relVista = b.dataset.v;
+    for (const x of $("relModo").children) x.setAttribute("aria-pressed", String(x === b));
+    $("relGraficos").hidden = relVista !== "graficos"; $("relTexto").hidden = relVista !== "texto";
+  });
+  $("relBaixar").addEventListener("click", () => {
+    if (!relatorio) return;
+    const a = el("a"), url = URL.createObjectURL(new Blob([relatorio.markdown], { type: "text/markdown;charset=utf-8" }));
+    a.href = url; a.download = `relatorio-youtube-${relatorio.gerado_em.slice(0, 10)}.md`; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  let ultimaRel = 0;
+  function buscaRel() {
+    if (Date.now() - ultimaRel < 60_000) return; ultimaRel = Date.now();
+    const t = document.createElement("script"); t.src = `${RELATORIO}?t=${Date.now()}`; t.async = true;
+    t.onload = () => t.remove(); t.onerror = () => { t.remove(); if (!relatorio) $("relMeta").textContent = "Ainda não há relatório publicado."; };
+    document.head.append(t);
+  }
+
   // ---------- dados cifrados: a senha vira chave no navegador e nunca sai dele ----------
   const b64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
   const guarda = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }, del: k => { try { localStorage.removeItem(k); } catch {} } };
@@ -540,8 +689,16 @@
         chave = await deriva(salva, d); chaveSal = d.sal;
       }
       const dados = await abre(d, chave);
-      tranca(false); render(dados); if (pendenteRun && !run) recebeRun(pendenteRun);
+      tranca(false); render(dados); if (pendenteRun && !run) recebeRun(pendenteRun); if (pendenteRel && !relatorio) recebeRel(pendenteRel);
     } catch { chave = null; guarda.del("painel-senha"); tranca(true); }
+  }
+  let pendenteRel = null;
+  async function recebeRel(d) {
+    if (!d) return;
+    if (!d.cifrado) { renderRel(d); return; }
+    pendenteRel = d;
+    if (!chave || chaveSal !== d.sal) return;           // abre junto quando a senha for digitada
+    try { renderRel(await abre(d, chave)); } catch {}
   }
   async function recebeRun(d) {
     if (!d) return;
@@ -558,16 +715,18 @@
       const k = await deriva(senha, pendente), dados = await abre(pendente, k);
       chave = k; chaveSal = pendente.sal;
       if ($("lembrar").checked) guarda.set("painel-senha", senha);
-      $("senha").value = ""; tranca(false); render(dados); if (pendenteRun) recebeRun(pendenteRun);
+      $("senha").value = ""; tranca(false); render(dados); if (pendenteRun) recebeRun(pendenteRun); if (pendenteRel) recebeRel(pendenteRel);
     } catch {
       $("trancaErro").hidden = false; const c = $("cofre"); c.classList.remove("treme"); void c.offsetWidth; c.classList.add("treme"); $("senha").select();
     } finally { bt.disabled = false; }
   });
   $("sair").addEventListener("click", () => { chave = null; atual = null; anterior = {}; guarda.del("painel-senha"); tranca(true); });
-  window.__painel = recebe; window.__run = recebeRun;
+  window.__painel = recebe; window.__run = recebeRun; window.__relatorio = recebeRel;
   function buscaRun() { const t = document.createElement("script"); t.src = `${RUN}?t=${Date.now()}`; t.async = true; t.onload = t.onerror = () => t.remove(); document.head.append(t); }
   let ultimaRun = 0;
   setInterval(() => { relogioRun(); const cada = run && run.status === "running" ? 12_000 : 60_000; if (Date.now() - ultimaRun >= cada) { ultimaRun = Date.now(); buscaRun(); } }, 1000);
   busca(); setInterval(busca, 60_000); setInterval(estado, 20_000);
+  buscaRel(); setInterval(() => { relHoras(); if (relatorio && Date.now() > new Date(relatorio.proximo_em).getTime() + 5 * 6e4) buscaRel(); }, 60_000);
+  if (location.hash === "#relatorio") abreAba("rel");
   document.addEventListener("visibilitychange", () => { if (!document.hidden) busca(); });
 })();
